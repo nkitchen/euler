@@ -23,6 +23,25 @@
    [20 73 35 29 78 31 90  1 74 31 49 71 48 86 81 16 23 57  5 54]
    [ 1 70 54 71 83 51 54 69 16 92 33 48 61 43 52  1 89 19 67 48]])
 
-(prn (get-in grid [7 3]))
-(prn (map #(get-in grid [% 4]) (range (count grid))))
-(prn (get-in grid [7 303]))
+(def m (count grid))
+(def n (apply max (map count grid)))
+(def k 4)
+
+(def deltas [[0 1] [1 0] [1 1] [1 -1]])
+
+(defn vadd [u v] (vec (map + u v)))
+(defn prod [xs] (apply * xs))
+
+(defn group
+  "Returns a group of k adjacent numbers starting at [x y]."
+  [p delta]
+  (let [coords (take k (iterate #(vadd % delta) p))]
+    (remove nil? (map #(get-in grid %) coords))))
+
+(def ans (apply max (map prod
+                         (filter #(= (count %) k)
+                                 (for [x (range m)
+                                       y (range n)
+                                       d deltas]
+                                   (group [x y] d))))))
+(prn ans)
