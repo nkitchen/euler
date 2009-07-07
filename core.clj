@@ -1,5 +1,6 @@
 (ns euler.core
-  (:use [clojure.contrib.lazy-seqs :only [primes reductions]]))
+  (:use [clojure.contrib.lazy-seqs :only [primes]])
+  (:use [clojure.contrib.seq-utils :only [reductions]]))
 
 (defn tails [s]
   (take-while identity (iterate rest s)))
@@ -96,7 +97,7 @@
   (when (seq coll)
     (if (pred (first coll))
       (rest coll)
-      (lazy-cons (first coll) (remove-first pred (rest coll))))))
+      (lazy-seq (cons (first coll) (remove-first pred (rest coll)))))))
 
 ;(let [prime-set (ref #{})
 ;      prime-rest (ref primes)]
