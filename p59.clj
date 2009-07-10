@@ -22,6 +22,15 @@
         (filter english-words)
         count))
 
+(defn english-share [text]
+  (let [english-chars (pipe text
+                            (re-seq #"[\w']+")
+                            (map #(.toLowerCase %))
+                            (filter english-words)
+                            (map count)
+                            (reduce +))]
+    (/ english-chars (count text))))
+
 (def cipher-text
   (with-open [r (new java.io.PushbackReader (reader "cipher1.clj"))]
     (read r)))
@@ -43,7 +52,7 @@
 ;;    (if (seq rkeys)
 ;;      (let [key (first rkeys)
 ;;            decoded (decode key cipher-text)
-;;            score (english-count decoded)
+;;            score (english-share decoded)
 ;;            item {:key key :decoded decoded :score score}]
 ;;        (cond
 ;;          (< (count best) *top-count*)
@@ -58,24 +67,4 @@
 ;;
 ;;(prn top-decodings)
 
-;
-;(def as (map (fn [i] (apply concat (partition 1 3 (drop i cipher))))
-;             (range 3)))
-;
-;(defn decodings [bytes]
-;  (into {} (for [key (range (int \a) (inc (int \z)))]
-;             {key (decode key bytes)})))
-;
-;(defn tvd-to-english [bytes]
-;  (tvd (distro (freqs (map #(Character/toUpperCase (char %)) bytes)))
-;       english-distro))
-;(def tvd-to-english (memoize tvd-to-english))
-;
-;(def best-decodings
-;  (map (fn [bytes]
-;         (let [ds (into [] (decodings bytes))]
-;           (last (sort-by #(tvd-to-english (second %)) ds))))
-;       as))
-;
-;(prn (apply str (apply interleave best-decodings)))
 ;;(repl)
