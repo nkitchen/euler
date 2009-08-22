@@ -70,6 +70,11 @@
   [k n]
   (= (rem n k) 0))
 
+(def *prime-certainty* 20)
+
+(defn prime? [x]
+  (.isProbablePrime (bigint x) *prime-certainty*))
+
 (defn factor
   "Returns the prime factors of m as a map to multiplicities."
   [n]
@@ -118,11 +123,6 @@
 ;          (alter prime-set conj (first @prime-rest))
 ;          (alter prime-rest rest)))
 ;      (@prime-set n))))
-
-(def *prime-certainty* 20)
-
-(defn prime? [x]
-  (.isProbablePrime (bigint x) *prime-certainty*))
 
 (defn lexico-next-permutation [p]
   ; If there exists a pair [x y] at consecutive indices such that x <= y,
