@@ -65,6 +65,12 @@
   ([x & ys]
    (from-digits (mapcat digits (cons x ys)))))
 
+(defn gcd [a b]
+  (cond
+    (< a b) (gcd b a)
+    (= b 0) a
+    :else (gcd b (rem a b))))
+
 (defn divides?
   "Returns true if n is an integer multiple of k."
   [k n]
