@@ -23,28 +23,4 @@
         n
         (recur (inc n) (assoc pmemo n q))))))
 
-;(defn partition-count
-;  "Returns the number of ways in which n can be written as a sum of positive
-;  integers."
-;  [n]
-;  (cond
-;    (neg? n) 0
-;    (<= n 1) 1
-;    :else
-;    (rem
-;      (sum (for [[s t] (map vector
-;                            (cycle [1 1 -1 -1])
-;                            (map #(partition-count (- n %)) gen-pent-nums))
-;                 :while (pos? t)]
-;             (rem (* s t) 1000000)))
-;      1000000)))
-;(def partition-count (memoize partition-count))
-
-;(def ans
-;  (first (filter #(== 0 (rem (inc (partition-count %)) 1000000))
-;                 (map #(if (= 0 (rem % 1000000))
-;                         (do (prn %) %)
-;                         %)
-;                        (iterate inc 10))))
-;  )
 (repl)
