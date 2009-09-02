@@ -1,4 +1,4 @@
-(ns euler.p80
+(ns euler.p81
   (:use euler.core
         clojure.contrib.duck-streams
         clojure.contrib.repl-ln))
