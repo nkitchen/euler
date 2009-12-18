@@ -146,7 +146,7 @@
                       (remove-first #{z} (sort (subvec v i)))))
             (recur (dec i))))))))
 
-(defn successors [p]
+(defn lex-successors [p]
   (take-while identity (iterate lexico-next-permutation p)))
 
 (defn combinations [xs k]
