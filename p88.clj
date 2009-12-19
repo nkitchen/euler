@@ -6,44 +6,42 @@
 
 (set! *warn-on-reflection* true)
 
-(defn successors [factors]
-  (concat (when (apply = 2 factors)
-            (list (conj factors 2)))
-          (for [i (range (count factors))
-                :when (or (zero? i)
-                          (> (factors (dec i)) (factors i)))]
-            (update-in factors [i] inc))))
+(defn factor-groups
+  "Returns a sequence of decompositions of n into factors."
+  [n min-factor]
+  (concat (list [n])
+          (for [i (range min-factor (inc (/ n 2)))
+                :while (<= (* i i) n)
+                :when (zero? (mod n i))
+                g (factor-groups (quot n i) i)]
+            (conj g i))))
 
 (def max-k 12000)
 
 (def monitor (agent {}))
 
 (def ans
-  (loop [q (doto (new java.util.PriorityQueue
-                      11
-                      (proxy [java.util.Comparator] []
-                        (compare [a b] (compare (:k a) (:k b)))))
-             (.add {:factors [2 2] :n 4 :k 2}))
-         best (sorted-map)]
-    (let [{:keys [factors n k]} (.poll q)]
-      (if (> k max-k)
-        (sum (set (vals best)))
-        (do
-          (doseq [s (successors factors)]
-            (.add q {:factors s :n (prod s) :k (+ (count s)
-                                                  (- (prod s) (sum s)))}))
-          (recur q
-                 (if (< n (get best k Integer/MAX_VALUE))
-                   (let [newbest (assoc best k n)]
-                     (send monitor
-                           (fn [prev cur]
-                             (when (not= (count prev) (count cur))
-                               (prn (count cur)))
-                             cur)
-                           newbest)
-                     newbest)
-                   best)))))))
-(print \newline)
+  (loop [n 2
+         best {}]
+    (if (= (count best) (dec max-k))
+      (sum (set (vals best)))
+      (recur (inc n)
+             (reduce (fn [m g]
+                       (let [k (+ (count g) (- n (sum g)))]
+                         (if (and (<= k max-k)
+                                  (< n (get m k Integer/MAX_VALUE)))
+                           (do
+                             #_(send monitor
+                                   (fn [prev cur]
+                                     (when (not= (count prev) (count cur))
+                                       (prn (count cur)))
+                                     cur)
+                                   (assoc m k n))
+                             (assoc m k n))
+                           m)))
+                     best
+                     (filter #(> (count %) 1) (factor-groups n 2)))))))
 
-(repl)
+(prn ans)
+;(repl)
 
