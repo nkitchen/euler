@@ -1,5 +1,6 @@
 (ns euler.p89
   (:use euler.core
+        clojure.contrib.duck-streams
         clojure.contrib.repl-ln
         clojure.contrib.repl-utils))
 
@@ -48,6 +49,10 @@
       :else
         (recur n letters vltail))))
 
-(prn (minimal-roman 1998))
+(def ans
+  (reduce (fn [n r]
+            (+ n (- (count r) (count (minimal-roman (parse-roman r))))))
+          0
+          (read-lines "roman.txt")))
 (repl)
 
