@@ -149,11 +149,11 @@
 (defn lex-successors [p]
   (take-while identity (iterate lexico-next-permutation p)))
 
-(defn combinations [xs k]
-  (if (zero? k)
-    (list nil)
-    (apply concat (for [[y & zs] (tails xs)]
-                    (map #(cons y %) (combinations zs (dec k)))))))
+;(defn combinations [xs k]
+;  (if (zero? k)
+;    (list nil)
+;    (apply concat (for [[y & zs] (tails xs)]
+;                    (map #(cons y %) (combinations zs (dec k)))))))
 
 (defn triangle?
   "= 1/2 k (k + 1) for some integer k."
