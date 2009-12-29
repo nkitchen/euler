@@ -1,7 +1,8 @@
 (ns euler.p92
   (:use euler.core
         clojure.contrib.repl-ln
-        clojure.contrib.repl-utils))
+        clojure.contrib.repl-utils)
+  (:import java.util.LinkedHashMap))
 
 (set! *warn-on-reflection* true)
 
@@ -10,15 +11,20 @@
 (defn step [n]
   (sum (map square (digits n))))
 
-(def dest-memo (atom {}))
+(def *memo-size* 100000)
+(def #^java.util.Map dest-memo
+  (proxy [LinkedHashMap] []
+    (removeEldestEntry [#^java.util.Map$Entry eldest]
+      (>= (.size #^java.util.Map this) *memo-size*))))
+
 (defn dest [n]
   (condp = n
     1 1
     89 89
-    (if-let [result (@dest-memo n)]
+    (if-let [result (.get dest-memo n)]
       result
       (let [result (dest (step n))]
-        (swap! dest-memo assoc n result)
+        (.put dest-memo n result)
         result))))
     
 (prn (count (filter #(= 89 %) (map dest (range 1 10000000)))))
