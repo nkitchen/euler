@@ -3,31 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"sort"
 )
 
 const MAXELEM = 1e6
-
-func properDivisors(n int) <-chan int {
-	out := make(chan int)
-	go func() {
-		for i := 1; i <= n/2; i++ {
-			if n%i == 0 {
-				out <- i
-			}
-		}
-		close(out)
-	}()
-	return out
-}
-
-func succ(n int) int {
-	s := 0
-	for k := range properDivisors(n) {
-		s += k
-	}
-	return s
-}
 
 func append(a []int, x int) []int {
 	if 1+len(a) > cap(a) {
@@ -41,31 +19,62 @@ func append(a []int, x int) []int {
 	return a
 }
 
-var memo = make(map[int][]int)
+var divMemo = make(map[int] []int)
+func properDivisors(n int) []int {
+	divs, found := divMemo[n]
+	if !found {
+		divs = make([]int, 0, 4)
+		for i := 1; i <= n/2; i++ {
+			if n%i == 0 {
+				divs = append(divs, i)
+			}
+		}
+		divMemo[n] = divs
+	}
+	return divs
+}
 
-func amicableChain(n int) []int { return amicableChain2(n, make(map[int]int)) }
+func succ(n int) int {
+	s := 0
+	for _, k := range properDivisors(n) {
+		s += k
+	}
+	return s
+}
 
-func amicableChain2(n int, seen map[int]int) []int {
+type Chain struct {
+	length int
+	min int
+}
+
+var chainMemo = make(map[int]Chain)
+
+func amicableChain(n int) Chain { return amicableChain2(n, make(map[int]int)) }
+
+func amicableChain2(n int, seen map[int]int) Chain {
 	if n > MAXELEM || n == 1 {
-		return nil
+		return Chain{ 0, 0 }
 	}
 
-	result, found := memo[n]
+	result, found := chainMemo[n]
 	if !found {
 		if times, _ := seen[n]; times == 2 {
-			result = make([]int, 0, 4)
+			result.length = 0
+			result.min = -1
 			for k, times := range seen {
 				if times == 2 {
-					result = append(result, k)
+					result.length++
+					if result.min == -1 || k < result.min {
+						result.min = k
+					}
 				}
 			}
-			sort.SortInts(result)
 		} else {
 			seen[n] = 1 + times
 			defer func() { seen[n] = times }()
 			result = amicableChain2(succ(n), seen)
 		}
-		memo[n] = result
+		chainMemo[n] = result
 	}
 	return result
 }
@@ -77,10 +86,12 @@ func main() {
 	for n := 1; n < *max; n++ {
 		fmt.Print(n, " ")
 		c := amicableChain(n)
-		if c == nil {
+		if c.length == 0 {
 			fmt.Println("nil")
 		} else {
 			fmt.Println(c)
 		}
 	}
+
+	fmt.Println(15472, amicableChain(15472))
 }
