@@ -4,9 +4,11 @@ package primes
 // #include "data.h"
 import "C"
 
-import (
-	"container/vector"
-)
+// Nth returns the nth prime.
+func Nth(n int) int {
+	p := C.GetPrime((C.int)(n))
+	return int(p)
+}
 
 func generate() chan int {
 	ch := make(chan int)
@@ -44,19 +46,15 @@ func sieve() chan int {
 }
 
 // UpTo returns all primes <= max.
-func UpTo(max int) []int {
-	var a vector.IntVector
-	for p := range sieve() {
-		if p > max {
-			return a.Data()
+func UpTo(max int) <-chan int {
+	out := make(chan int)
+	go func() {
+		for p := range sieve() {
+			if p > max {
+				return
+			}
+			out <- p
 		}
-		a.Push(p)
-	}
-	return nil
-}
-
-// Nth returns the nth prime.
-func Nth(n int) int {
-	p := C.GetPrime((C.int)(n))
-	return int(p)
+	}()
+	return out
 }
