@@ -1,43 +1,19 @@
 package main
 
 import (
+	"factor"
 	"flag"
 	"fmt"
 )
 
 const MAXELEM = 1e6
 
-func append(a []int, x int) []int {
-	if 1+len(a) > cap(a) {
-		// Reallocate
-		b := make([]int, (1+cap(a))*2)
-		copy(b, a)
-		a = b[0:len(a)]
-	}
-	a = a[0 : 1+len(a)]
-	a[len(a)-1] = x
-	return a
-}
-
-var divMemo = make(map[int] []int)
-func properDivisors(n int) []int {
-	divs, found := divMemo[n]
-	if !found {
-		divs = make([]int, 0, 4)
-		for i := 1; i <= n/2; i++ {
-			if n%i == 0 {
-				divs = append(divs, i)
-			}
-		}
-		divMemo[n] = divs
-	}
-	return divs
-}
-
 func succ(n int) int {
 	s := 0
-	for _, k := range properDivisors(n) {
-		s += k
+	for d := range factor.Divisors(n) {
+		if d != n {
+			s += d
+		}
 	}
 	return s
 }
@@ -83,15 +59,17 @@ var max *int = flag.Int("max", 100, "Number")
 
 func main() {
 	flag.Parse()
+	var longest Chain
 	for n := 1; n < *max; n++ {
-		fmt.Print(n, " ")
+		if (n + 1) % 10000 == 0 {
+			fmt.Print(".")
+		}
+
 		c := amicableChain(n)
-		if c.length == 0 {
-			fmt.Println("nil")
-		} else {
-			fmt.Println(c)
+		if c.length > longest.length {
+			longest = c
+			fmt.Println("New longest:", longest)
 		}
 	}
-
-	fmt.Println(15472, amicableChain(15472))
+	fmt.Println(longest)
 }
