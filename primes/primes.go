@@ -51,6 +51,7 @@ func UpTo(max int) <-chan int {
 	go func() {
 		for p := range sieve() {
 			if p > max {
+				close(out)
 				return
 			}
 			out <- p
