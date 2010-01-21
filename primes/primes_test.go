@@ -2,16 +2,16 @@ package primes
 
 import "testing"
 
-const CHECKNUM = 100
+const CHECKNUM = 1000
 
-func TestFirstFew(t *testing.T) {
-	sieved := UpTo(First[CHECKNUM-1])
+func TestFirst(t *testing.T) {
+	sieved := UpTo(Nth(CHECKNUM-1))
 	for i := 0; i < CHECKNUM; i++ {
 		x := sieved[i]
-		y := First[i]
+		y := Nth(i)
 		if x != y {
-			t.Errorf("prime #%d from UpTo and First don't match: " +
-			         "UpTo => %d, First => %d", i, x, y)
+			t.Errorf("prime #%d from UpTo and Nth don't match: " +
+			         "UpTo => %d, Nth => %d", i, x, y)
 			break
 		}
 	}
