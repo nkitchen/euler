@@ -67,14 +67,37 @@
              ((get-in board [i j]) value))
     (assoc-in board [i j] #{value})))
 
+(defn unknown [board]
+  (when board
+    (for [i (range 0 *size*)
+          j (range 0 *size*)
+          :let [cands (get-in board [i j])]
+          :when (< 1 (count cands))]
+      [i j])))
+
+(defn solved? [board]
+  (when board
+    (empty? (unknown board))))
+
 (defn solve [board known]
   (let [assigned (reduce assign board known)
         new-board (reduce exclude assigned known)
-        inferred (required new-board)]
-    (if (seq inferred)
-      (recur (reduce assign new-board inferred)
-             inferred)
-      new-board)))
+        inferred (required new-board)
+        to-guess (first (unknown new-board))]
+    (cond
+      (nil? new-board) nil
+      (seq inferred)
+        (recur (reduce assign new-board inferred)
+               inferred)
+      (nil? to-guess) new-board
+      :else
+        (loop [[value & other-cands] (seq (get-in new-board to-guess))]
+          (if value
+            (let [guessed (solve new-board [(conj to-guess value)])]
+              (if guessed
+                guessed
+                (recur other-cands)))
+            nil)))))
 
 (defn read-games
   "Reads the file and returns a sequence of known squares for each game."
@@ -87,10 +110,6 @@
           :let [value (- (int c) (int \0))]
           :when (not= value 0)]
       [i j value])))
-
-(defn solved? [board]
-  (when board
-    (every? #(= 1 (count %)) (for [row board, square row] square))))
 
 (defn code [board]
   (from-digits (for [j (range 3)] (first (get-in board [0 j])))))
@@ -105,5 +124,6 @@
                (println "Not solved:" n)
                0))))))
 
-(repl)
+(print ans)
+;(repl)
 
