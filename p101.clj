@@ -1,7 +1,8 @@
 (ns euler.p101
-  (:use clojure.contrib.repl-ln
+  (:use euler.core
+        clojure.contrib.repl-ln
         clojure.contrib.repl-utils
-        incanter.core))
+        clojure.contrib.seq-utils))
 
 (set! *warn-on-reflection* true)
 
@@ -16,19 +17,44 @@
 (defn terms [coeffs]
   (map #(eval-poly coeffs %) (iterate inc 1)))
 
+(defn snap [x]
+  (let [y (Math/round (double x))]
+    (if (< (Math/abs (double (- x y))) 1e-4)
+      y
+      x)))
+
+(defn bind-rows [& rows]
+  (vec (map vec rows)))
+
+(def matrix identity)
+
+(defn cancel-with-row [A i]
+  (let [a (get-in A [i i])
+        scaled-row (into [] (map #(/ % a) (A i)))]
+    (reduce (fn [A j]
+              (let [b (get-in A [j i])]
+                (assoc A j (into [] (map #(- %1 (* b %2))
+                                         (A j)
+                                         scaled-row)))))
+            (assoc A i scaled-row)
+            (remove #{i} (range (count A))))))
+
+(defn gauss-jordan [A b]
+  (let [n (count A)
+        C (vec (for [[i row] (indexed A)]
+                 (conj row (nth b i))))]
+    (->> (reduce #(cancel-with-row %1 %2) C (range n))
+         (map last))))
+
+(def solve gauss-jordan)
+
 (defn fit [terms]
   (let [n (count terms)
         A (apply bind-rows (for [i (range 1 (inc n))]
                              (take n (iterate #(* i %) 1))))]
     (if (= n 1)
-      terms
-      (solve A (matrix terms)))))
-
-(defn snap [x]
-  (let [y (Math/round (double x))]
-    (if (< (Math/abs (double (- x y))) 1e-6)
-      y
-      x)))
+      (map snap terms)
+      (map snap (solve A (matrix terms))))))
 
 (defn first-incorrect-term [k]
   (let [fitted (fit (take k (terms *coeffs*)))]
