@@ -60,7 +60,7 @@
   (let [fitted (fit (take k (terms *coeffs*)))]
     (loop [[t1 & r1] (terms fitted)
            [t2 & r2] (terms *coeffs*)]
-      (if (not= t1 t2)
+      (if (> (Math/abs (double (- t1 t2))) 1e-4) 
         (snap t1)
         (recur r1 r2)))))
 
