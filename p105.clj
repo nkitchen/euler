@@ -1,5 +1,6 @@
 (ns euler.p105
   (:use euler.core
+        clojure.contrib.combinatorics
         clojure.contrib.duck-streams
         clojure.contrib.pprint
         clojure.contrib.repl-ln
@@ -46,5 +47,13 @@
         t (interleavings (repeat (- n k) left)
                          (repeat (- n k 1) right))]
     (concat s [right] t)))
+
+(defn distinct-subset-sums? [a]
+  (assert (= a (sort a)))
+  (->> (for [k (range 2 (inc (quot (count a) 2)))
+             idxs (combinations (range (count a)) (* 2 k))
+             signs (unbalanced-matched-seqs (count idxs) 1 -1)]
+         (sum (map #(* (get a %1) %2) idxs signs)))
+       (not-any? zero?)))
 
 (repl)
