@@ -52,8 +52,33 @@
   (assert (= a (sort a)))
   (->> (for [k (range 2 (inc (quot (count a) 2)))
              idxs (combinations (range (count a)) (* 2 k))
-             signs (unbalanced-matched-seqs (count idxs) 1 -1)]
+             signs (unbalanced-matched-seqs k 1 -1)]
          (sum (map #(* (get a %1) %2) idxs signs)))
        (not-any? zero?)))
 
-(repl)
+(defn monotonic-subset-sums? [a]
+  (let [n (count a)]
+    (->> (for [k (range 1 n)
+               :while (<= (+ k k 1) n)]
+           (> (sum (subvec a 0 (inc k)))
+              (sum (subvec a (- n k)))))
+         (every? identity))))
+
+(defn special-sum-set? [a]
+  (and (monotonic-subset-sums? a)
+       (distinct-subset-sums? a)))
+
+(def ans
+  (->> (for [line (read-lines "sets.txt")]
+         (let [a (->> (re-split #"," line)
+                      (map #(Integer/parseInt %))
+                      (sort)
+                      (vec))]
+           (print ".")
+           (flush)
+           (if (special-sum-set? a)
+             (sum a)
+             0)))
+       (sum)))
+(print ans)
+;(repl)
