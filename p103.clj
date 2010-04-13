@@ -17,51 +17,74 @@
         b (get s m)]
     (vec (cons b (map #(+ b %) s)))))
 
-(defn random-neighbor [s]
-  (let [i (rand-int (count s))
-        j (rand-int (count s))
-        d (- (* 2 (rand-int 5) 2))
-        e (- (* 2 (rand-int 5) 2))
-        t (-> s
-            (update-in [i] #(+ % d))
-            (update-in [j] #(+ % e))
-            (sort)
-            (vec))]
-    (if (and (apply < t)
-             (special-sum-set? t))
-      t
-      s)))
+(defn grown-set [n]
+  (first (filter #(= n (count %)) (iterate grow-set [1]))))
 
-(def *temperature* 1.0)
+(def #^cvc3.ValidityChecker *checker*)
 
-(defn anneal [state obj-fn neighbor-fn iter-count]
-  (loop [state state
-         best state
-         n iter-count]
-    (if (zero? n)
-      best
-      (let [next-state (neighbor-fn state)
-            f-cur (obj-fn state)
-            f-next (obj-fn next-state)
-            delta (- f-cur f-next)
-            new-best (if (< (obj-fn next-state)
-                            (obj-fn best))
-                       next-state
-                       best)]
-        (if (and (pos? delta)
-                 (>= (rand) (Math/exp (/ (- delta) *temperature*))))
-          (recur state new-best (dec n))
-          (recur next-state new-best (dec n)))))))
+(defmulti #^cvc3.Expr cvc-expr type)
+(defmethod cvc-expr Integer [#^Integer x]
+  (.ratExpr *checker* x))
+(defmethod cvc-expr cvc3.Expr [e]
+  e)
+(defmethod cvc-expr java.util.List [a]
+  (map cvc-expr a))
+(defmethod cvc-expr clojure.lang.Symbol [e]
+  (prn "Cannot convert symbol" e)
+  (assert false))
+(defmethod cvc-expr clojure.lang.ISeq [[op & args]]
+  (let [[a b & r] (map cvc-expr args)]
+    (condp = op
+      '+ (if (instance? java.util.List a)
+           (.plusExpr *checker* a)
+           (.plusExpr *checker* a b))
+      '* (.multExpr *checker* a b))))
+(prefer-method cvc-expr clojure.lang.ISeq java.util.List)
 
-(defn find-optimum-special-sum-set [n iter-count]
-  (let [init-set (nth (iterate grow-set [1]) (dec n))
-        obj-fn :obj
-        neighbor-fn (fn [state]
-                      (let [n (random-neighbor (:set state))]
-                        {:set n :obj (sum n)}))]
-    (anneal {:set init-set :obj (sum init-set)}
-            obj-fn
-            neighbor-fn
-            iter-count)))
+(def relation-ctor
+  {'= #(.eqExpr *checker* %1 %2) 
+   '< #(.ltExpr *checker* %1 %2) 
+   '> #(.gtExpr *checker* %1 %2) 
+   '<= #(.leExpr *checker* %1 %2) 
+   '>= #(.geExpr *checker* %1 %2)
+   'not= #(.notExpr *checker* (.eqExpr *checker* %1 %2))})
 
+(defn #^cvc3.Expr cvc-formula [f]
+  (let [args (map cvc-expr (rest f))]
+    (apply (relation-ctor (first f)) args)))
+
+(defn distinct-subset-constraints [vars]
+  (let [n (count vars)]
+    (for [k (range 2 (inc (quot n 2)))
+          idxs (combinations (range n) (* 2 k))
+          signs (unbalanced-matched-seqs k 1 -1)]
+      `(~'not= ~0 (~'+ ~@(map #(list '* (vars %1) %2)
+                             idxs
+                             signs))))))
+
+(defn monotonic-subset-constraints [vars]
+  nil)
+
+(defn optimum-special-sum-set [n]
+  (binding [*checker* (cvc3.ValidityChecker/create)]
+    (let [int-type (.intType *checker*)
+          vars (vec (for [i (range n)]
+                      (.varExpr *checker* (str "x" i) int-type)))]
+      (doseq [f (concat (for [pair (partition 2 1 (cons 0 vars))]
+                          (cons '< pair))
+                        (distinct-subset-constraints vars)
+                        (monotonic-subset-constraints vars))]
+        (.assertFormula *checker* (cvc-formula f)))
+      (loop [best (grown-set n)]
+        (let [max-sum (sum best)]
+          (.push *checker*)
+          (let [obj `(~'< (~'+ ~vars) ~(dec max-sum))
+                result (.checkUnsat *checker* (cvc-formula obj))]
+            (if (= result cvc3.SatResult/SATISFIABLE)
+              (let [model (.getConcreteModel *checker*)]
+                (.pop *checker*)
+                model)
+                ;(recur (.getConcreteModel *checker*))
+              best)))))))
+                     
 (repl)
