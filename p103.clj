@@ -58,12 +58,16 @@
     (for [k (range 2 (inc (quot n 2)))
           idxs (combinations (range n) (* 2 k))
           signs (unbalanced-matched-seqs k 1 -1)]
-      `(~'not= ~0 (~'+ ~@(map #(list '* (vars %1) %2)
-                             idxs
-                             signs))))))
+      `(~'not= ~0 (~'+ [~@(map #(list '* (vars %1) %2)
+                                   idxs
+                                   signs)])))))
 
 (defn monotonic-subset-constraints [vars]
-  nil)
+  (let [n (count vars)]
+    (for [k (range 1 n)
+          :while (<= (+ k k 1) n)]
+      `(~'> (~'+ ~(subvec vars 0 (inc k)))
+            (~'+ ~(subvec vars (- n k)))))))
 
 (defn optimum-special-sum-set [n]
   (binding [*checker* (cvc3.ValidityChecker/create)]
@@ -83,7 +87,9 @@
             (if (= result cvc3.SatResult/SATISFIABLE)
               (let [model (.getConcreteModel *checker*)]
                 (.pop *checker*)
-                model)
+                (->> (vals model)
+                     (map #(.getInteger (.getRational #^cvc3.Expr %)))
+                     (sort)))
                 ;(recur (.getConcreteModel *checker*))
               best)))))))
                      
