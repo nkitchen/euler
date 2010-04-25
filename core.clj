@@ -52,11 +52,14 @@
 (defn digit-sum [n]
   (sum (digits n)))
 
-(defn pandigital? [n]
-  (let [d (digits n)
-        s (set d)]
-    (and (= (count d) (count s))
-         (= (set d) (set (range 1 (inc (count d))))))))
+(defmulti pandigital? type)
+(defmethod pandigital? java.lang.Number [n]
+  (pandigital? (digits n)))
+(defmethod pandigital? :default [digits]
+  (let [k (count digits)
+        s (set digits)]
+    (and (= k (count s))
+         (= s (set (range 1 (inc k)))))))
 
 (defn with-digits [n]
   (range (pow 10 (dec n)) (pow 10 n)))
