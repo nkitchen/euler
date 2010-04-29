@@ -6,3 +6,7 @@ _obj
 _test
 _cgo_*
 *.cgo[12].*
+
+syntax: regexp
+
+^p\d+$
