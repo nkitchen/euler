@@ -10,8 +10,8 @@
 (set! *warn-on-reflection* true)
 
 (defn-memo fill-way-count [n]
+  (assert (>= n 0))
   (cond
-    (neg? n) 0
     (<= 0 n 2) 1
     :else (apply +
                  (fill-way-count (dec n))
@@ -19,22 +19,25 @@
                  (for [k (range 3 n)]
                    (fill-way-count (- n k 1))))))
      
-(defn-memo fill-ways
-  ([n base]
-   (let [m (- (count base) n)]
-     (cond
-       (neg? n) nil
-       (<= 0 n 2) [base]
-       :else
-       (concat (fill-ways (dec n) base)
-               [(reduce #(assoc %1 (+ %2 m) 1) base (range 0 n))]
-               (for [k (range 3 n)
-                     w (fill-ways (- n k 1)
-                                  (reduce #(assoc %1 (+ %2 m) 1)
-                                          base
-                                          (range 0 k)))]
-                 w)))))
-  ([n] (fill-ways n (vec (repeat n 0)))))
+(defn overwrite [u i v]
+  (reduce #(assoc %1 (+ i %2) (v %2))
+          u
+          (range (count v))))
+
+(defn-memo fill-ways [n]
+  (let [base (vec (repeat n 0))]
+    (cond
+      (neg? n) nil
+      (<= 0 n 2) [base]
+      :else
+         (concat (for [w (fill-ways (dec n))]
+                   (overwrite base 1 w))
+                 (for [k (range 3 n)
+                       :let [v (vec (repeat k 1))
+                             new-base (overwrite base 0 v)]
+                       w (fill-ways (- n k 1))]
+                   (overwrite new-base (+ k 1) w))
+                 [(vec (repeat n 1))]))))
 
 (def ans
   (delay (first (for [n (iterate inc 7)
