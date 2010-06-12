@@ -79,7 +79,7 @@
   [k n]
   (= (rem n k) 0))
 
-(def *prime-certainty* 20)
+(def *prime-certainty* 40)
 
 (defn prime? [x]
   (.isProbablePrime (bigint x) *prime-certainty*))
