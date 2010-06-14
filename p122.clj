@@ -10,15 +10,19 @@
 
 (set! *warn-on-reflection* true)
 
-(defn-memo best-terms [k]
+(defn all-terms [k max-count]
   (if (= k 1)
     [#{1}]
-    (let [ps (for [a (range 1 (inc (quot k 2)))
-                   s (best-terms a)
-                   t (best-terms (- k a))]
-               (union #{k} s t))
-          m (apply min (map count ps))]
-      (filter #(= m (count %)) ps))))
+    (let [ps (for [a (reverse (range 1 (inc (quot k 2))))
+                   s (all-terms a (- max-count 2))
+                   t (all-terms (- k a) (- max-count 1))]
+               (union #{k} s t))]
+      (filter #(<= (count %) max-count) ps))))
+
+(defn best-terms [k]
+  (let [ps (all-terms k (dec k))
+        m (apply min (map count ps))]
+    (filter #(= m (count %)) ps)))
 
 (defn p122 []
   (sum (for [k (range 1 201)]
