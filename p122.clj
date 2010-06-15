@@ -10,6 +10,10 @@
 
 (set! *warn-on-reflection* true)
 
+(defn trace-last [& xs]
+  (apply prn xs)
+  (last xs))
+
 (defn-memo best-terms [k]
   (if (= k 1)
     [#{1}]
@@ -22,6 +26,9 @@
 
 (defn p122 []
   (sum (for [k (range 1 201)]
-         (count (first (best-terms k))))))
+         (do
+           (print ".")
+           (flush)
+           (count (first (best-terms k)))))))
 
 (repl)
