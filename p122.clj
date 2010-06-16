@@ -10,27 +10,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn trace-last [& xs]
-  (apply prn xs)
-  (last xs))
-
-(defn all-terms [k max-count]
-  (cond
-    (<= max-count 0) nil
-    (= k 1) [#{1}]
-    :else
-      (let [ps (for [a (reverse (range 1 (inc (quot k 2))))
-                     s (all-terms a (- max-count 2))
-                     t (all-terms (- k a) (- max-count 1))]
-                 (union #{k} s t))]
-        (filter #(<= (count %) max-count) ps))))
-
-(defn best-terms [k]
-  [(first (for [m (range 1 (dec k))
-                ps (all-terms k m)]
-            ps))])
-
-(def *max-k* 200)
+(def *max-k* 1000)
 
 (defn seq-compare [[x & r :as a] [y & s :as b]]
   (let [c (compare x y)]
@@ -40,50 +20,60 @@
       (zero? c) (recur r s)
       (pos? c) 1)))
 
-(defn entry-compare [[m a] [n b]]
-  (let [c (compare m n)]
+(defn lcm
+  ([a] a)
+  ([a b] (/ (* a b) (gcd a b)))
+  ([a b & r] (reduce lcm (lcm a b) r)))
+
+(defn entry-compare [[m p a] [n q b]]
+  (let [c (compare [m p] [n q])]
     (cond
       (neg? c) -1
       (pos? c) 1
-      (zero? c) (seq-compare a b))))
+      :else
+        (- (seq-compare a b)))))
 
 (defn best-terms []
-  (let [entry (fn [e] [(count e) e])]
-    (loop [queue (sorted-set-by entry-compare (entry `(1)))
-           expansions nil
-           best {1 `(1)}]
-      (cond
-        (= (count best) *max-k*)
+  (loop [best {1 `(1)}
+         queue (sorted-set-by entry-compare [1 1 `(1)])
+         expansions nil]
+    (cond
+      (= (count best) *max-k*)
         best
-        (and (empty? expansions) (empty? queue))
+      (and (empty? expansions) (empty? queue))
         best
-        (empty? expansions)
-          (let [[_ s :as e] (first queue)
-                m (first s)]
-            (recur (disj queue e)
-                   (for [x (seq s)
-                         :let [y (+ x m)]
-                         :when (<= y *max-k*)]
-                     (conj s y))
-                   best))
-        :else
-          (let [s (first expansions)
-                m (first (seq s))]
-            (prn s (count best))
-            (if (or (nil? (best m))
-                    (< (count s) (count (best m))))
-              (recur (conj queue (entry s))
-                     (next expansions)
-                     (do
-                       (print ".")
-                       (flush)
-                       (assoc best m s)))
-              (recur (conj queue (entry s))
-                     (next expansions)
-                     best)))))))
+      (empty? expansions)
+        (let [[_ __ s :as e] (first queue)
+              m (first s)]
+          (recur best
+                 (disj queue e)
+                 (for [x (seq s)
+                       :let [y (+ x m)]
+                       :when (<= y *max-k*)]
+                   (conj s y))))
+      :else
+        (let [s (first expansions)
+              m (first (seq s))]
+          ;(prn s (count best))
+          (cond
+            (nil? (best m))
+              (let [nb (assoc best m s)]
+                (recur (do
+                         (print ".")
+                         (flush)
+                         nb)
+                       (conj queue [(count s) (reduce lcm s) s])
+                       (next expansions)))
+            (= (count s) (count (best m)))
+              (recur best
+                     (conj queue [(count s) (reduce lcm s) s])
+                     (next expansions))
+            :else
+              (recur best queue (next expansions)))))))
 
 (defn p122 []
   (sum (map #(dec (count %)) (vals (best-terms)))))
 
 
-(repl)
+(prn (p122))
+;(repl)
