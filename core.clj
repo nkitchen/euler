@@ -23,6 +23,9 @@
     (prod (replicate y x))
     (Math/pow (double x) (double y))))
 
+(defn mod-pow [a b m]
+  (+ 0 (.modPow (bigint a) (bigint b) (bigint m))))
+
 (defn factorial [n] (prod (range 1 (inc n))))
 
 (defn choose [n k]

@@ -9,9 +9,6 @@
 
 (set! *warn-on-reflection* true)
 
-(defn mod-pow [a b m]
-  (+ 0 (.modPow (bigint a) (bigint b) (bigint m))))
-
 (defn rmax [a]
   (cond
     (odd? a) (* a (- a 1))
