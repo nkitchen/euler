@@ -8,15 +8,31 @@
         clojure.contrib.str-utils))
 
 (set! *warn-on-reflection* true)
+(set! *print-length* 6)
 
-(defn add-factor [entry]
-  (let [[n fs ms] entry]
-    (if (<= (sum ms) 1)
-      (let [[p & qs] (:rest (meta entry))
-            ms+ (conj (vec (repeat (count fs) 0)) 1)]
-        [(with-meta [p (conj fs p) ms+]
-                    (assoc (meta entry) :rest qs))])
-      nil)))
+(defn rad-extend [[r fs ms [p & qs]]]
+  (if (= 1 (sum ms))
+    [[p (conj fs p) (vec (cons 0 ms)) qs]]
+    nil))
+
+(defn rad-inc [[r fs ms next-primes]]
+  (for [i (range (count ms))
+        :while (zero? (ms i))]
+    [(* r (fs i)) fs (assoc ms i 1) next-primes]))
+
+(defn radicals
+  "Returns a sorted sequence of products of prime factors."
+  []
+  (let [f (fn f [queue]
+            (let [[r & other :as entry] (first queue)]
+              (lazy-seq
+                (cons r
+                      (f (reduce conj (disj queue entry)
+                                 (concat (rad-extend entry)
+                                         (rad-inc entry))))))))]
+    (f (sorted-set [1 [] [] primes]
+                   [2 [2] [1] (next primes)]))))
+
 
 (defn inc-factors [entry]
   (let [[n fs ms] entry]
@@ -24,7 +40,7 @@
       (with-meta [(* f n) fs (update-in ms [i] inc)]
                  (meta entry)))))
 
-(defn radicals [max-n]
+#_(defn radicals [max-n]
   (let [entry1 (with-meta [1 [] []] {:rest primes})]
     (loop [queue (sorted-set entry1)
            radicals []]
