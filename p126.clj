@@ -57,21 +57,21 @@
              (entry0 new-dims))
            nil)))
              
-;; This gives the least n for which C(n) >= target.  I still need to filter
-;; out n for which C(n) > target.
 (defn p126 [target]
   (loop [queue (sorted-set-by cmp (entry0 [1 1 1]))
-         counts {}]
+         counts {}
+         guess nil]
     (let [entry (first queue)
-          n (count (:layer entry))]
-      (if (zero? (:i entry))
-        (recur (reduce conj (disj queue entry) (successors entry))
-                        counts)
-        (let [c (get counts n 0)]
-          (if (= (inc c) target)
-            n
-            (recur (reduce conj (disj queue entry) (successors entry))
-                   (assoc counts n (inc c)))))))))
+          n (count (:layer entry))
+          c (get counts n 0)
+          next-queue (reduce conj (disj queue entry) (successors entry))
+          next-counts (assoc counts n (inc c))]
+      (cond
+        (zero? (:i entry)) (recur next-queue counts guess)
+        (= (inc c) target) (recur next-queue next-counts n)
+        (> (inc c) target) (recur next-queue next-counts nil)
+        guess guess
+        :else (recur next-queue next-counts nil)))))
 
-(prn (p126 10))
+(prn (p126 1000))
 ;(repl)
