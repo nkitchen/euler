@@ -57,21 +57,60 @@
              (entry0 new-dims))
            nil)))
              
-(defn p126 [target]
-  (loop [queue (sorted-set-by cmp (entry0 [1 1 1]))
-         counts {}
-         guess nil]
-    (let [entry (first queue)
-          n (count (:layer entry))
-          c (get counts n 0)
-          next-queue (reduce conj (disj queue entry) (successors entry))
-          next-counts (assoc counts n (inc c))]
-      (cond
-        (zero? (:i entry)) (recur next-queue counts guess)
-        (= (inc c) target) (recur next-queue next-counts n)
-        (> (inc c) target) (recur next-queue next-counts nil)
-        guess guess
-        :else (recur next-queue next-counts nil)))))
+(defn dims-seq
+  ([max-n] (dims-seq 3 max-n max-n))
+  ([d max-n max-k]
+   (if (zero? d)
+     [[]]
+     (for [k (range 1 (inc max-n))
+           :when (<= k max-k)
+           a (dims-seq (dec d) (quot max-n k) k)]
+       (cons k a)))))
 
-(prn (p126 1000))
-;(repl)
+(defn layer-seq [dims]
+  (let [f (fn [[layer whole]]
+            (let [vis (visible-faces layer whole)
+                  next-layer (set (for [[c d] vis] (vadd c d)))]
+              [next-layer (union whole next-layer)]))
+        layer0 (set (cuboid dims))]
+    (map first (iterate f [layer0 layer0]))))
+
+(defn layer-counts 
+  ([max-n]
+   (frequencies (for [dims (dims-seq max-n)
+                      n (layer-counts max-n dims)]
+                  n)))
+  ([max-n dims]
+   (let [f (fn [[layer whole]]
+             (let [vis (visible-faces layer whole)
+                   next-layer (set (for [[c d] vis] (vadd c d)))]
+               [next-layer (union whole next-layer)]))
+         layer0 (set (cuboid dims))]
+     (for [[layer whole] (rest (iterate f [layer0 layer0]))
+           :while (<= (count layer) max-n)]
+       (count layer)))))
+
+(defn p126 [target max-n]
+  (first (for [[n c] (sort (layer-counts max-n))
+               :when (= c target)]
+           n)))
+
+;(defn p126 [target max-n]
+;
+;  (loop [queue (sorted-set-by cmp (entry0 [1 1 1]))
+;         counts {}
+;         guess nil]
+;    (let [entry (first queue)
+;          n (count (:layer entry))
+;          c (get counts n 0)
+;          next-queue (reduce conj (disj queue entry) (successors entry))
+;          next-counts (assoc counts n (inc c))]
+;      (cond
+;        (zero? (:i entry)) (recur next-queue counts guess)
+;        (= (inc c) target) (recur next-queue next-counts n)
+;        (> (inc c) target) (recur next-queue next-counts nil)
+;        guess guess
+;        :else (recur next-queue next-counts nil)))))
+;
+;(prn (p126 1000))
+(repl)
