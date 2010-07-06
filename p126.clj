@@ -10,6 +10,30 @@
 
 (set! *warn-on-reflection* true)
 
+(defn frame-count [k dims]
+  (if (zero? (count dims))
+    (if (neg? k)
+      0
+      (+ k 1))
+    (let [d1 (first dims)]
+      (if (>= d1 2)
+        (+ (* 2 (frame-count k (rest dims)))
+           (* (count dims) (- d1 2)))
+        (+ (frame-count k (rest dims))
+           (frame-count (dec k) (rest dims)))))))
+
+(defn layer-count [k dims]
+  (if (zero? (count dims))
+    (if (neg? k)
+      0
+      (* 1/2 (+ k 1) (+ k 2)))
+    (let [d1 (first dims)]
+      (if (>= d1 2)
+        (+ (* 2 (layer-count k (rest dims)))
+           (* (- d1 2) (frame-count k (rest dims))))
+        (+ (layer-count k (rest dims))
+           (layer-count (dec k) (rest dims)))))))
+
 (def face-dirs (for [i (range 3)
                      d [-1 1]]
                  (assoc [0 0 0] i d)))
@@ -90,27 +114,31 @@
            :while (<= (count layer) max-n)]
        (count layer)))))
 
-(defn p126 [target max-n]
-  (first (for [[n c] (sort (layer-counts max-n))
-               :when (= c target)]
-           n)))
+(defn make-entry [k dims]
+  [(layer-count k dims) k dims])
 
-;(defn p126 [target max-n]
-;
-;  (loop [queue (sorted-set-by cmp (entry0 [1 1 1]))
-;         counts {}
-;         guess nil]
-;    (let [entry (first queue)
-;          n (count (:layer entry))
-;          c (get counts n 0)
-;          next-queue (reduce conj (disj queue entry) (successors entry))
-;          next-counts (assoc counts n (inc c))]
-;      (cond
-;        (zero? (:i entry)) (recur next-queue counts guess)
-;        (= (inc c) target) (recur next-queue next-counts n)
-;        (> (inc c) target) (recur next-queue next-counts nil)
-;        guess guess
-;        :else (recur next-queue next-counts nil)))))
-;
-;(prn (p126 1000))
+(defn successors [[n k dims]]
+  (list* (make-entry (inc k) dims)
+         (if (= k 1)
+           (for [i (range (count dims))
+                 :when (or (zero? i) (> (dims (dec i)) (dims i)))
+                 :let [new-dims (update-in dims [i] inc)]]
+             (make-entry 1 new-dims))
+           nil)))
+
+(defn p126 [target]
+  (loop [queue (sorted-set (make-entry 1 [1 1 1]))
+         counts {}
+         guess nil]
+    (let [[n k dims :as entry] (first queue)
+          c (get counts n 0)
+          next-queue (reduce conj (disj queue entry) (successors entry))
+          next-counts (assoc counts n (inc c))]
+      (cond
+        (= (inc c) target) (recur next-queue next-counts n)
+        (> (inc c) target) (recur next-queue next-counts nil)
+        guess guess
+        :else (recur next-queue next-counts nil)))))
+
+;(prn (p126 10))
 (repl)
