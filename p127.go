@@ -66,15 +66,16 @@ func main() {
 				panic("Sum of co-prime numbers is not co-prime")
 			}
 
-			ra := radicals[a]
-			rb := radicals[b]
-			rc := radicals[c]
+			ra := int64(radicals[a])
+			rb := int64(radicals[b])
+			rc := int64(radicals[c])
 
-			if ra * rb >= c {
+			if ra * rb >= int64(c) {
 				break
 			}
 
-			if ra * rb * rc < c {
+			if ra * rb * rc < int64(c) {
+				println(a, b, c)
 				s += int64(c)
 			}
 		}
@@ -82,26 +83,35 @@ func main() {
 
 	println(s)
 
-	s = int64(0)
-	for b := 2; b < m - 1; b++ {
-		for a := 1; a < b; a++ {
-			if gcd(a, b) != 1 {
-				continue
-			}
+	//s = int64(0)
+	//for b := 2; b < m - 1; b++ {
+	//	for a := 1; a < b; a++ {
+	//		if gcd(a, b) != 1 {
+	//			continue
+	//		}
 
-			c := a + b
-			if c >= m {
-				continue
-			}
+	//		c := a + b
+	//		if c >= m {
+	//			continue
+	//		}
 
-			ra := radicals[a]
-			rb := radicals[b]
-			rc := radicals[c]
+	//		ra := radicals[a]
+	//		rb := radicals[b]
+	//		rc := radicals[c]
 
-			if ra * rb * rc < c {
-				s += int64(c)
-			}
-		}
-	}
-	println(s)
+	//		x := []int{a, b, c}
+	//		for _, y := range(x) {
+	//			if y != 1 && radicals[y] == 1 {
+	//				panic(fmt.Sprintf("Bad radical: rad(%v) = %v", y, radicals[y]))
+	//			}
+	//		}
+
+	//		if ra * rb * rc < c {
+	//			s += int64(c)
+	//			println(a, b, c)
+	//		}
+	//	}
+	//	// 87416823606123
+	//}
+	//println(s)
 }
