@@ -8,7 +8,7 @@ import "math"
 var _ = fmt.Printf
 
 // Returns the index of the first tile in a ring.
-func firstInRing(r int) int {
+func firstInRing(r int64) int64 {
 	if r < 0 {
 		return -1
 	}
@@ -19,13 +19,13 @@ func firstInRing(r int) int {
 }
 
 // Converts a tile number to (ring, side, offset) coordinates.
-func nToRsi(n int) (r, s, i int) {
+func nToRsi(n int64) (r, s, i int64) {
 	if n == 1 {
 		return 0, 0, 0
 	}
 
 	disc := 9 + 12*(n - 2)
-	r = int(math.Floor((3 + math.Sqrt(float64(disc))) / 6))
+	r = int64(math.Floor((3 + math.Sqrt(float64(disc))) / 6))
 
 	f := firstInRing(r)
 	d := n - f
@@ -36,7 +36,7 @@ func nToRsi(n int) (r, s, i int) {
 	return
 }
 
-func rsiToN(r, s, i int) int {
+func rsiToN(r, s, i int64) int64 {
 	if r == 0 && s == 0 && i == 0 {
 		return 1
 	}
@@ -44,7 +44,7 @@ func rsiToN(r, s, i int) int {
 	return firstInRing(r) + r*s + i
 }
 
-func rsiToXy(r, s, i int) (x, y float64) {
+func rsiToXy(r, s, i int64) (x, y float64) {
 	if r <= 0 {
 		return 0, 0
 	}
@@ -73,7 +73,7 @@ func rsiToXy(r, s, i int) (x, y float64) {
 	return
 }
 
-func xyToRsi(x, y float64) (r, s, i int) {
+func xyToRsi(x, y float64) (r, s, i int64) {
 	if x == 0 && y == 0 {
 		return 0, 0, 0
 	}
@@ -85,22 +85,22 @@ func xyToRsi(x, y float64) (r, s, i int) {
 
 	switch {
 	case y > 0:
-		r = int(y - 0.5*x)
-		i = int(-x)
+		r = int64(y - 0.5*x)
+		i = int64(-x)
 		if i < r {
 			s = 0; return
 		}
 	case y <= 0:
-		r = int(-y - 0.5*x)
-		i = int(0.5*x - y)
+		r = int64(-y - 0.5*x)
+		i = int64(0.5*x - y)
 		if i >= 0 {
 			s = 2; return
 		}
 	}
 
 	s = 1
-	r = int(-x)
-	i = int(-0.5*x - y)
+	r = int64(-x)
+	i = int64(-0.5*x - y)
 	return
 }
 
@@ -122,37 +122,71 @@ func neighbors(x, y float64) []xy {
 	return a
 }
 
-func abs(x int) int {
+func abs(x int64) int64 {
 	if x < 0 {
 		return -x
 	}
 	return x
 }
 
-func isPrime(n int) bool {
-	z := big.NewInt(int64(n))
+func isPrime(n int64) bool {
+	z := big.NewInt(n)
 	return big.ProbablyPrime(z, 20)
+}
+
+func pd(n int64, x, y float64) int {
+	c := 0
+	for _, xy := range neighbors(x, y) {
+		r, s, i := xyToRsi(xy.x, xy.y)
+		m := rsiToN(r, s, i)
+		if isPrime(abs(n - m)) {
+			c += 1
+		}
+	}
+	return c
+}
+
+func pd3ers() <-chan int64 {
+	out := make(chan int64)
+
+	go func() {
+		r := int64(0)
+		for {
+			x := float64(0)
+			y := float64(r)
+			n := rsiToN(r, 0, 0)
+			if pd(n, x, y) == 3 {
+				out <- n
+			}
+
+			if r > 0 {
+				x = float64(1)
+				y = float64(r) - 0.5
+				n = rsiToN(r, 5, r - 1)
+				if pd(n, x, y) == 3 {
+					out <- n
+				}
+			}
+
+			r++
+		}
+	}()
+
+	return out
 }
 
 func main() {
 	kp := flag.Int("k", 10, "Print the kth tile for which PD(n) = 3")
 	flag.Parse()
 
-	n := 1
-	c := 0
-	for c < *kp {
-		pd := 0
-		for _, xy := range neighbors(rsiToXy(nToRsi(n))) {
-			r, s, i := xyToRsi(xy.x, xy.y)
-			m := rsiToN(r, s, i)
-			if isPrime(abs(n - m)) {
-				pd += 1
-			}
+	s := pd3ers()
+	for i := 0; i < *kp - 1; i++ {
+		if i % 100 == 0 {
+			print(".")
 		}
-		if pd == 3 {
-			c++
-		}
-		n++
+		<-s
 	}
-	println(n - 1)
+
+	n := <-s
+	println(n)
 }
