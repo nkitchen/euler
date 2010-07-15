@@ -1,7 +1,16 @@
+ifeq ($(GOARCH),x86)
+    O = 8
+else ifeq ($(GOARCH),amd64)
+    O = 6
+endif
+
+GC = $(O)g
+GLD = $(O)l
+
 all:
 
-% : %.8
-	8l -o $@ $<
+% : %.$(O)
+	$(GLD) -o $@ $<
 
-%.8 : %.go
-	8g $<
+%.$(O) : %.go
+	$(GC) $<
