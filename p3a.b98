@@ -1,0 +1,10 @@
+v Project Euler Problem 3
+  Largest Prime Factor
+
+>"GNOL"4($$             v
+vp00p10Z "600851475143"0< ; Load input, store at 0,0 0,1
+ ;q = 3  ;  ;if M % q == 0    ;;M /= q              ;      
+>03 11p10p >00g01g 10g11g O+#v_00g01g 10g11g D 01p00p v
+           ^p01p11 A20 g11g01<
+           ^_v#                         +S 10 g10g00  <
+             >10g11g P@                

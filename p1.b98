@@ -1,0 +1,12 @@
+v Project Euler Problem 1
+  in Funge-98
+
+  The sum is stored on the stack, not in Funge-Space.
+
+> 0 a::**1-v
+ >:#v_ $.@ >
+v   > 1{:3u\$\$\0002-u3}    ; sum i -> i sum i ;
+> :5%#v_     v
+v     >:3%#v_> +
+> :        >$\1-v
+ ^              <
